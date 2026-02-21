@@ -69,7 +69,7 @@ local/swdata-swir-ids.txt:
 	$(CURL) -sSLf https://raw.githubusercontent.com/suikawiki/extracted/refs/heads/master/data/extracted/swir-ids.txt > $@
 local/swdata-swir-list.txt: local/swdata-swir-ids.txt 
 	cat local/swdata-swir-ids.txt | \
-	awk '{ q = int($$1 / 1000); r = $$1 % 1000; printf "local/ids/%d/%d.txt\n", q, r }' > $@
+	awk '{ q = int($$1 / 1000); r = $$1 % 1000; printf "local/data/ids/%d/%d.txt\n", q, r }' > $@
 local/swir: local-swdata-repo bin/swir-list.pl local/swdata-swir-list.txt \
     always
 	mkdir -p $@
