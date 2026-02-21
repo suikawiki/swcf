@@ -2,6 +2,7 @@ use strict;
 use warnings;
 use utf8;
 use Path::Tiny;
+use lib glob path (__FILE__)->parent->child ('modules/*/lib');
 use JSON::PS;
 
 my $ScriptTags = {qw(

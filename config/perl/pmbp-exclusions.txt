@@ -1,0 +1,6 @@
+
+- "../../bin/modules/web-dom" build tests
+- "../../bin/modules/web-markup" build tests tests-json
+- "../../bin/modules/web-encodings" build tests
+- "../../bin/modules/web-url" build tests
+- "../../bin/modules/json-ps" build tests
