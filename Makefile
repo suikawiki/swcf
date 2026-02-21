@@ -51,7 +51,7 @@ build-github-pages: deps build-gp-main build-gp-index build-gp-cleanup
 
 build-gp-main:
 	mkdir -p local current
-	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swir cp -R /app/fonts/swir /local/swir
+	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -R /app/fonts/swir /local/swir
 	mv local/swir current/swir
 build-gp-cleanup:
 	rm -fr ./bin/modules ./modules ./local ./deps
@@ -63,7 +63,7 @@ build-for-docker: build-for-docker-from-old \
 
 build-for-docker-from-old:
 	mkdir -p local
-	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swir cp -R /app/fonts/swir /local/swir || mkdir -p local/swir
+	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -R /app/fonts/swir /local/swir || mkdir -p local/swir
 
 local/swdata-swir-ids.txt:
 	$(CURL) -sSLf https://raw.githubusercontent.com/suikawiki/extracted/refs/heads/master/data/extracted/swir-ids.txt > $@
