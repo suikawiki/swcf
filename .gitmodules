@@ -1,0 +1,4 @@
+[submodule "bin/modules/json-ps"]
+	path = bin/modules/json-ps
+	url = https://github.com/manakai/perl-json-ps
+	track = master
