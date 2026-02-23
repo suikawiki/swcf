@@ -6,11 +6,22 @@ use lib glob path (__FILE__)->parent->child ('modules/*/lib');
 use JSON::PS;
 
 my $ScriptTags = {qw(
-  田山 田山文字
-  盛岡 盛岡文字
-  日本新字 日本新字
-  安寺持方数字 安寺持方数字
+  田山文字 TAYM
+  盛岡文字 MROK
+  日本新字 NHSJ
 )};
+#  安寺持方数字 XXX
+
+my $FreeLicenseKeys = {
+  "CC0-1.0" => 1,
+  "CC-PDM-1.0" => 1,
+  "-ddsd-ndl-PDM" => 1,
+  "CC-BY-3.0" => 1,
+  "CC-BY-4.0" => 1,
+  "-ddsd-kulib-free-normal" => 1,
+  "CC-BY-SA-4.0" => 1,
+  "-ddsd-pdl1.0" => 1,
+};
 
 my $Data = {};
 
@@ -20,33 +31,37 @@ for (<>) {
   chomp;
   my $path = path ($_);
   my $json = json_bytes2perl $path->slurp;
+  my $is_free = $FreeLicenseKeys->{$json->{image}->{legalKey} // ''};
 
-    my $item_key_to_data = {};
-    for my $item (@{$json->{items}}) {
-      my $data = {
-        item_type => $item->{type},
-        image_key => $json->{image}->{key},
-        item_key => $item->{key},
-        tags => {},
-        size => $item->{regionSize} || 0,
-        _sub => $item->{subItemKeys},
-        _super => $item->{superItemKeys},
-      };
-      $data->{transform_key} = $json->{image}->{transformKey}
-          if defined $json->{image}->{transformKey};
-      $item_key_to_data->{$data->{item_key}} = $data;
+  my $item_key_to_data = {};
+  for my $item (@{$json->{items}}) {
+    my $data = {
+      item_type => $item->{type},
+      image_key => $json->{image}->{key},
+      item_key => $item->{key},
+      tags => {},
+      size => $item->{regionSize} || 0,
+      _sub => $item->{subItemKeys},
+      _super => $item->{superItemKeys},
+    };
+    $data->{transform_key} = $json->{image}->{transformKey}
+        if defined $json->{image}->{transformKey};
+    $item_key_to_data->{$data->{item_key}} = $data;
 
-      my $value = $item->{value};
-      $value =~ s/\A\s+//;
-      $value =~ s/\s+\z//;
-      if ($value =~ s/\$([0-9]+)$//) {
-        # XXXbackcompat
-      }
-      while ($value =~ s/#([^#]+)$//) {
-        $data->{tags}->{$1} = 1;
-      }
-      $data->{value} = $value;
+    my $value = $item->{value};
+    $value =~ s/\A\s+//;
+    $value =~ s/\s+\z//;
+    if ($value =~ s/\$([0-9]+)$//) {
+      # XXXbackcompat
+    }
+    while ($value =~ s/#([^#]+)$//) {
+      $data->{tags}->{$1} = 1;
+    }
+    $data->{value} = $value;
 
+    delete $data->{tags}->{free}; # obsolete
+    $data->{tags}->{free} = 1 if $is_free;
+    
       if (defined $item->{regionKey}) { # character, component, cluster
         $data->{image_source} = $json->{image};
         $data->{image_region}->{region_key} = $item->{regionKey};
@@ -80,18 +95,18 @@ for (<>) {
       $data->{tags}->{$_} = 1 for keys %{$Defs->{ref_tags}->{$data->{region_ref} // ''} or {}};
       $data->{tags}->{noglyph} = 1 if $data->{item_type} eq 'annotation';
 
-      my $style = 0;
-      for (1..8) { # u1 u2 ... u8
+      my $style = -1;
+      for (0..8) { # u0 u1 u2 ... u8
         $style = $_ if $data->{tags}->{'u'.$_};
       }
       $data->{_style} = $style;
-      $style ||= 1;
-      my $variant = 0;
-      for (1..5) { # v1 v2 v3 v4 v5
+      $style = 0 if $style == -1;
+      my $variant = -1;
+      for (0..5) { # v0 v1 v2 v3 v4 v5
         $variant = $_ if $data->{tags}->{'v'.$_};
       }
       $data->{_variant} = $variant;
-      $variant ||= 1;
+      $variant = 0 if $variant == -1;
       $variant = "縦$variant" if $data->{tags}->{縦};
       $data->{_category} = 9;
       {
@@ -120,6 +135,9 @@ for (<>) {
         $Data->{groups}->{$data->{group_key}}->{value} = $data->{value};
         $Data->{groups}->{$data->{group_key}}->{variant} = $variant;
         $Data->{groups}->{$data->{group_key}}->{style} = $style;
+        $Data->{groups}->{$data->{group_key}}->{features} = join '.',
+            $script . $variant, 'u' . $style # :swk features
+            if $script;
         push @{$Data->{groups}->{$data->{group_key}}->{region_refs} ||= []}, $data->{region_ref}; # will be reordered later
       }
     } # $data
@@ -198,8 +216,8 @@ Tags
 
   Glyph classifications:
   
-  v1 v2 v3 v4 v5 Variant ID.
-  u1 u2 .. u8   Style difference ID.
+  v0 v1 .. v5   Variant ID.
+  u0 u1 .. u8   Style difference ID.
   d1 d2         Voiced mark differences.
 
   Source types:  
