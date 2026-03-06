@@ -84,7 +84,7 @@ local/swir: local-swdata-repo always
 	mkdir -p $@
 	$(MAKE) $@/list.json $@/ep.json
 local/swir/list.json: bin/swir-list.pl local/swdata-swir-list.txt
-	$(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@/list.json
+	$(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
 local/swir/ep.json: js/*.js local/swir/list.json
 	ls -l $@ || echo '{}' > $@
 	docker run -i \
