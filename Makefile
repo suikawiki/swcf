@@ -92,7 +92,7 @@ local/swir/ep.json: js/*.js local/swir/list.json
             -v `pwd`/local/swir/list.json:/app/local/list.json \
             -v `pwd`/local/swir/ep.json:/app/local/paths.json \
 	    -w /app \
-	    node node construct-ep-json.js
+	    node bash -c 'npm install canvas && node construct-ep-json.js'
 	ls -l $@
 
 local-swdata-repo:
