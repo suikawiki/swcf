@@ -10,6 +10,10 @@
     ]},
     "pages": true,
     "merger": 1,
-    "gaa": true
+    "gaa": {
+      "build": ["make deps build-for-docker",
+                {"docker_build": "quay.io/suikawiki/swfonts:swcf"}],
+      "deploy": [{"docker_push": "quay.io/suikawiki/swfonts:swcf"}]
+    }
   }
 }
