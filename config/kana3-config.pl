@@ -4,19 +4,19 @@ use warnings;
 our $Keys;
 our $Data;
 
-$Keys->{gmap_file_names} = [map { ($ENV{GMAP_PATH} // '') . $_ } 
+$Keys->{gmap_file_names} = [map { ($ENV{GMAP_PATH} // '.') . "/" . $_ } 
   'swir-gmap.json',
 ];
 $Keys->{input_file_names} = {};
 $Keys->{output_file_names} = {
-  kgmap => 'kana3-kgmap.json',
-  font_map => 'kana3-fontmap.json',
+  kgmap => ($ENV{OUT_PATH} // '.') . '/kana3-kgmap.json',
+  font_map => ($ENV{OUT_PATH} // '.') . '/kana3-fontmap.json',
 };
 
 $Data->{fonts}->{parts} = {
   2 => {
     name => 'SWCF Kana3 B',
-    outFileName=> 'kana3b.ttf',
+    outFileName=> ($ENV{OUT_PATH} // '.') . '/kana3b.ttf',
     source_keys => [],
     baseFontKey=> 'frq0',
     license_type => 'ccbysa40',
