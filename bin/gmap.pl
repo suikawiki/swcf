@@ -3,12 +3,11 @@ use warnings;
 use Path::Tiny;
 use JSON::PS;
 
-my $ThisPath = path (__FILE__)->parent;
 my $Data = {};
 
 {
   my $name = shift;
-  my $path = $ThisPath->child ($name);
+  my $path = path ($name);
   my $is_kana = $name =~ /kana|ryuukyuu/;
   my $ScriptFeatPattern = qr/HIRA|KATA|KRTR|KNNA|MRTN|AHIR|HTMA|KTDM|ANIT|TYKN|TYKO|HSMI|IZMO|KIBI|TATU|AHKS|NKTM|IRHO|NANC|UMAS|TUSM|TNKS|AWAM|KIBK|KAMI|RUKU|HNDE|NHSJ|TAYM|MROK/;
   for (split /\n/, $path->slurp_utf8) {
