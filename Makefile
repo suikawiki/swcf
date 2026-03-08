@@ -119,7 +119,7 @@ local/swir-gmap.json: local/swir/gmap.json
 	cp $< $@
 local/swcfk/kana3-kgmap.json: bin/kgmap.pl config/kana3-config.pl \
     local/swir-gmap.json
-	GMAP_PATH=../local/ $(PERL) $< config/kana3-config.pl
+	GMAP_PATH=./local/ $(PERL) $< config/kana3-config.pl
 local/swcfk/kana3b.ttf: js/kggenerate.js js/otwriter.js local/opentype.js \
     local/swcfk/kana3-kgmap.json \
     local/fonts/frq0.ttf local/swir/ep.json
