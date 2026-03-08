@@ -61,9 +61,11 @@ build-github-pages: deps build-gp-main build-gp-index build-gp-cleanup
 build-gp-main:
 	mkdir -p local current
 	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -R /app/fonts/swir /local/swir
+	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -R /app/fonts/swcfk /local/swcfk
 	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swir:data-main cp -R /app/indexes /local/swir-indexes
 	mv local/swir current/swir
 	mv local/swir-indexes current/swir-indexes
+	mv local/swcfk current/swcfk
 build-gp-cleanup:
 	rm -fr ./bin/modules ./modules ./local ./deps
 	rm config/perl/libs.txt
