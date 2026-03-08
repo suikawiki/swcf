@@ -123,7 +123,7 @@ local/swcfk/kana3-kgmap.json: bin/kgmap.pl config/kana3-config.pl \
 local/swcfk/kana3b.ttf: js/kggenerate.js js/otwriter.js local/opentype.js \
     local/swcfk/kana3-kgmap.json \
     local/fonts/frq0.ttf local/swir/ep.json
-	docker run -i -v `pwd`:/app \
+	docker run -i \
 	    -v `pwd`/js:/app \
 	    -v `pwd`/local/swcfk:/app/swcfk \
 	    -v `pwd`:/app/data \
