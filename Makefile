@@ -21,7 +21,7 @@ updatebyhook: data
 
 ## ------ Setup ------
 
-PERL = ./perl
+PERL = ./perl -Ibin/modules/json-ps/lib
 
 deps: git-submodules pmbp-install
 
@@ -82,9 +82,13 @@ local/swdata-swir-list.txt: local/swdata-swir-ids.txt
 	awk '{ q = int($$1 / 1000); r = $$1 % 1000; printf "local/data/ids/%d/%d.txt\n", q, r }' > $@
 local/swir: local-swdata-repo always
 	mkdir -p $@
-	$(MAKE) $@/list.json $@/ep.json
+	$(MAKE) $@/list.json $@/ep.json $@/gmap.txt $@/gmap.json
 local/swir/list.json: bin/swir-list.pl local/swdata-swir-list.txt
 	$(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
+local/swir/gmap.txt: bin/swir-list-to-gmap.pl local/swir/list.json
+	$(PERL) $< local/swir/list.json > $@
+local/swir/gmap.json: bin/gmap.pl local/swir/gmap.txt
+	$(PERL) $< local/swir/gmap.txt > $@
 local/swir/ep.json: js/*.js local/swir/list.json
 	ls -l $@ || echo '{}' > $@
 	docker run -i \

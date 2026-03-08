@@ -1,8 +1,6 @@
 use strict;
 use warnings;
 use utf8;
-use Path::Tiny;
-use lib glob path (__FILE__)->parent->child ('modules/*/lib');
 use JSON::PS;
 
 my $ScriptTags = {qw(
@@ -10,7 +8,6 @@ my $ScriptTags = {qw(
   盛岡文字 MROK
   日本新字 NHSJ
 )};
-#  安寺持方数字 XXX
 
 my $FreeLicenseKeys = {
   "CC0-1.0" => 1,
@@ -23,14 +20,54 @@ my $FreeLicenseKeys = {
   "-ddsd-pdl1.0" => 1,
 };
 
+sub normalize_value ($$) {
+  my ($data, $script) = @_;
+  my $t = $data->{value};
+  
+  if ($script eq 'TAYM' or $script eq 'MROK') {
+    $t = {
+      "一月" => "\x{32C0}",
+      "二月" => "\x{32C1}",
+      "三月" => "\x{32C2}",
+      "四月" => "\x{32C3}",
+      "五月" => "\x{32C4}",
+      "六月" => "\x{32C5}",
+      "七月" => "\x{32C6}",
+      "八月" => "\x{32C7}",
+      "九月" => "\x{32C8}",
+      "十月" => "\x{32C9}",
+      "十一月" => "\x{32CA}",
+      "十二月" => "\x{32CB}",
+      "半月" => "◗",
+      "箸" => "🥢",
+      "鼠" => "🐀",
+      "牛" => "🐂",
+      "虎" => "🐅",
+      "兎" => "🐇",
+      "竜" => "🐉",
+      "蛇" => "🐍",
+      "馬" => "🐎",
+      "羊" => "🐏",
+      "猿" => "🐒",
+      "鳥" => "🐓",
+      "犬" => "🐕",
+      "猪" => "🐗",
+    }->{$t} // $t;
+  }
+  $t =~ s/゛/\x{3099}/g;
+
+  $data->{value} = $t;
+} # normalize_value
+
 my $Data = {};
 
 my $Defs = {};
 
 for (<>) {
   chomp;
-  my $path = path ($_);
-  my $json = json_bytes2perl $path->slurp;
+  open my $file, '<', $_ or die "$0: $_: $!";
+  local $/ = undef;
+  my $json = json_bytes2perl <$file>;
   my $is_free = $FreeLicenseKeys->{$json->{image}->{legalKey} // ''};
 
   my $item_key_to_data = {};
@@ -62,18 +99,18 @@ for (<>) {
     delete $data->{tags}->{free}; # obsolete
     $data->{tags}->{free} = 1 if $is_free;
     
-      if (defined $item->{regionKey}) { # character, component, cluster
-        $data->{image_source} = $json->{image};
-        $data->{image_region}->{region_key} = $item->{regionKey};
-        $data->{region_ref} = ':ep-' . (defined $data->{transform_key} ? 'x' . $data->{transform_key} . '-' : '') . $data->{image_key} . '-' . $data->{image_region}->{region_key};
-      }
-    } # $item
-    for my $data (sort { $a->{item_key} cmp $b->{item_key} } values %{$item_key_to_data}) {
-      if ($data->{item_type} eq 'sizeref' or $data->{item_type} eq 'cluster') {
-        my $datas = [map { $item_key_to_data->{$_} // () } @{$data->{_sub} or []}];
-        next unless @$datas;
-        my $ref_data = [grep { $_->{tags}->{sizeref} and defined $_->{region_ref} } @$datas]->[0];
-        next if not defined $ref_data and $data->{item_type} eq 'cluster';
+    if (defined $item->{regionKey}) { # character, component, cluster
+      $data->{image_source} = $json->{image};
+      $data->{image_region}->{region_key} = $item->{regionKey};
+      $data->{region_ref} = ':ep-' . (defined $data->{transform_key} ? 'x' . $data->{transform_key} . '-' : '') . $data->{image_key} . '-' . $data->{image_region}->{region_key};
+    }
+  } # $item
+  for my $data (sort { $a->{item_key} cmp $b->{item_key} } values %{$item_key_to_data}) {
+    if ($data->{item_type} eq 'sizeref' or $data->{item_type} eq 'cluster') {
+      my $datas = [map { $item_key_to_data->{$_} // () } @{$data->{_sub} or []}];
+      next unless @$datas;
+      my $ref_data = [grep { $_->{tags}->{sizeref} and defined $_->{region_ref} } @$datas]->[0];
+      next if not defined $ref_data and $data->{item_type} eq 'cluster';
         $ref_data //= [grep { defined $_->{region_ref} } @$datas]->[0];
         next unless defined $ref_data;
         for my $data (@$datas) {
@@ -83,64 +120,76 @@ for (<>) {
         if ($data->{item_type} eq 'cluster' and not $data eq $ref_data) {
           $data->{size_ref} = $ref_data->{region_ref};
         }
-      }
-
     }
-    for my $data (sort { $a->{item_key} cmp $b->{item_key} } values %{$item_key_to_data}) {
-      for my $key (@{$data->{_super} or []}) {
-        my $sd = $item_key_to_data->{$key};
-        $data->{tags}->{$_} = 1 for keys %{$sd->{tags} or {}};
-      }
+  } # $data
+  for my $data (sort { $a->{item_key} cmp $b->{item_key} } values %{$item_key_to_data}) {
+    for my $key (@{$data->{_super} or []}) {
+      my $sd = $item_key_to_data->{$key};
+      $data->{tags}->{$_} = 1 for keys %{$sd->{tags} or {}};
+    }
 
-      $data->{tags}->{$_} = 1 for keys %{$Defs->{ref_tags}->{$data->{region_ref} // ''} or {}};
-      $data->{tags}->{noglyph} = 1 if $data->{item_type} eq 'annotation';
+    $data->{tags}->{$_} = 1 for keys %{$Defs->{ref_tags}->{$data->{region_ref} // ''} or {}};
+    $data->{tags}->{noglyph} = 1 if $data->{item_type} eq 'annotation';
 
-      my $style = -1;
-      for (0..8) { # u0 u1 u2 ... u8
-        $style = $_ if $data->{tags}->{'u'.$_};
+    my $script = 0;
+    for (keys %$ScriptTags) {
+      $script = $ScriptTags->{$_} if $data->{tags}->{$_};
+    }
+    #
+    my $style = -1;
+    for (0..8) { # u0 u1 u2 ... u8
+      $style = $_ if $data->{tags}->{'u'.$_};
+    }
+    $data->{_style} = $style;
+    $style = 0 if $style == -1;
+    #
+    my $variant = -1;
+    for (0..5) { # v0 v1 v2 v3 v4 v5
+      $variant = $_ if $data->{tags}->{'v'.$_};
+    }
+    $data->{_variant} = $variant;
+    if ({
+      MROK => 1,
+    }->{$script} and $data->{tags}->{縦}) {
+      if ($variant > -1) {
+        $variant += 5;
+        $data->{_variant} = $variant;
       }
-      $data->{_style} = $style;
-      $style = 0 if $style == -1;
-      my $variant = -1;
-      for (0..5) { # v0 v1 v2 v3 v4 v5
-        $variant = $_ if $data->{tags}->{'v'.$_};
-      }
-      $data->{_variant} = $variant;
+      $variant = 5 if $variant == -1;
+    } else {
       $variant = 0 if $variant == -1;
-      $variant = "縦$variant" if $data->{tags}->{縦};
-      $data->{_category} = 9;
-      {
-        $data->{_category} = 1 if $data->{tags}->{現存};
-        $data->{_category} = 2 if $data->{tags}->{消失};
-        $data->{_category} = 3 if $data->{tags}->{模造};
-        $data->{_category} = 4 if $data->{tags}->{掲載};
-        $data->{_category} = 5 if $data->{tags}->{類似};
-      }
-      my $script = 0;
-      for (keys %$ScriptTags) {
-        $script = $ScriptTags->{$_} if $data->{tags}->{$_};
-      }
-      $data->{group_key} = join $;,
-          $script,
-          $data->{value},
-          $variant,
-          $style;
+    }
+    #
+    $data->{_category} = 9;
+    {
+      $data->{_category} = 1 if $data->{tags}->{現存};
+      $data->{_category} = 2 if $data->{tags}->{消失};
+      $data->{_category} = 3 if $data->{tags}->{模造};
+      $data->{_category} = 4 if $data->{tags}->{掲載};
+      $data->{_category} = 5 if $data->{tags}->{類似};
+    }
+    normalize_value ($data, $script);
+    $data->{group_key} = join $;,
+        $script,
+        $data->{value},
+        $variant,
+        $style;
       
-      if (defined $data->{image_region}) {
-        die "Duplicate |$data->{region_ref}|"
-            if defined $Data->{items}->{$data->{region_ref}};
-        $Data->{items}->{$data->{region_ref}} = $data;
-
-        $Data->{groups}->{$data->{group_key}}->{script} = $script;
-        $Data->{groups}->{$data->{group_key}}->{value} = $data->{value};
-        $Data->{groups}->{$data->{group_key}}->{variant} = $variant;
-        $Data->{groups}->{$data->{group_key}}->{style} = $style;
-        $Data->{groups}->{$data->{group_key}}->{features} = join '.',
-            $script . $variant, 'u' . $style # :swk features
-            if $script;
-        push @{$Data->{groups}->{$data->{group_key}}->{region_refs} ||= []}, $data->{region_ref}; # will be reordered later
-      }
-    } # $data
+    if (defined $data->{image_region}) {
+      die "Duplicate |$data->{region_ref}|"
+          if defined $Data->{items}->{$data->{region_ref}};
+      $Data->{items}->{$data->{region_ref}} = $data;
+      
+      $Data->{groups}->{$data->{group_key}}->{script} = $script;
+      $Data->{groups}->{$data->{group_key}}->{value} = $data->{value};
+      $Data->{groups}->{$data->{group_key}}->{variant} = $variant;
+      $Data->{groups}->{$data->{group_key}}->{style} = $style;
+      $Data->{groups}->{$data->{group_key}}->{features} = join '.',
+          $script . $variant, 'u' . $style # :swk features
+          if $script;
+      push @{$Data->{groups}->{$data->{group_key}}->{region_refs} ||= []}, $data->{region_ref}; # will be reordered later
+    }
+  } # $data
 }
 
 {
