@@ -125,11 +125,11 @@ local/swcfk/kana3b.ttf: js/kggenerate.js js/otwriter.js local/opentype.js \
     local/fonts/frq0.ttf local/swir/ep.json
 	docker run -i \
 	    -v `pwd`/js:/app \
-	    -v `pwd`/local/swcfk:/app/swcfk \
+	    -v `pwd`/local/swcfk/kana3-kgmap.json:/app/kana3-kgmap.json \
 	    -v `pwd`:/app/data \
 	    -v `pwd`/local/opentype.js:/app/opentype.js \
 	    -v `pwd`/local/fonts:/app/fonts \
-	    node bash -c 'cd /app && node kggenerate.js swcfk/kana3-kgmap.json 2'
+	    node bash -c 'cd /app && node kggenerate.js kana3-kgmap.json 2'
 
 local-swdata-repo:
 	$(GIT) clone --depth 1 https://github.com/suikawiki/suikawiki-data local/data || \
