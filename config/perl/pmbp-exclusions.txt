@@ -4,3 +4,4 @@
 - "../../bin/modules/web-encodings" build tests
 - "../../bin/modules/web-url" build tests
 - "../../bin/modules/json-ps" build tests
+- "../../bin/modules/web-encodings" build tests
