@@ -23,7 +23,7 @@ updatebyhook: data
 
 PERL = ./perl \
     -Ibin/modules/json-ps/lib \
-    -Ibin/modules/perl-web-encodings/lib
+    -Ibin/modules/web-encodings/lib
 
 deps: git-submodules pmbp-install
 
