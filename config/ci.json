@@ -8,12 +8,9 @@
     "tests": {"~deploy": [
       {"docker_push": "quay.io/suikawiki/swfonts:swcf"}
     ]},
+    "gaa": true,
+    "autobuild": {"per_day": 3},
     "pages": true,
-    "merger": 1,
-    "gaa": {
-      "build": ["make deps build-for-docker",
-                {"docker_build": "quay.io/suikawiki/swfonts:swcf"}],
-      "deploy": [{"docker_push": "quay.io/suikawiki/swfonts:swcf"}]
-    }
+    "merger": true
   }
 }
