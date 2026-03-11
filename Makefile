@@ -125,17 +125,35 @@ local/swir-gmap.json: local/swir/gmap.json
 local/swcfk/kana3-kgmap.json: bin/kgmap.pl config/kana3-config.pl \
     local/swir-gmap.json
 	GMAP_PATH=./local/ OUT_PATH=./local/swcfk/ $(PERL) $< config/kana3-config.pl
-local/swcfk/kana3b.ttf: js/kggenerate.js js/otwriter.js local/opentype.js \
+
+DEPS_KANA3B_TTF = js/kggenerate.js js/otwriter.js local/opentype.js \
     local/swcfk/kana3-kgmap.json \
     local/fonts/frq0.ttf local/swir/ep.json
-	docker run -i \
-	    -v `pwd`/js:/app \
-	    -v `pwd`/local/swcfk/kana3-kgmap.json:/app/kana3-kgmap.json \
-	    -v `pwd`:/app/data \
-	    -v `pwd`/local/opentype.js:/app/opentype.js \
-	    -v `pwd`/local/fonts:/app/fonts \
-	    -v `pwd`/local/swir/ep.json:/app/fonts/ep.json \
-	    node bash -c 'cd /app && node kggenerate.js kana3-kgmap.json 2'
+#
+CHECKSUM_FILE = local/swcfk/kana3b.ttf.sha1sum
+NEW_CHECKSUM_FILE = $(CHECKSUM_FILE).new
+#
+local/swcfk/kana3b.ttf: $(NEW_CHECKSUM_FILE)
+	(cmp -s $(NEW_CHECKSUM_FILE) $(CHECKSUM_FILE) && [ -f $@]) || ( \
+		echo "Inputs for $@ have changed or target is missing. Generating font..."; \
+		docker run -i \
+			-v `pwd`/js:/app \
+			-v `pwd`/local/swcfk/kana3-kgmap.json:/app/kana3-kgmap.json \
+			-v `pwd`:/app/data \
+			-v `pwd`/local/opentype.js:/app/opentype.js \
+			-v `pwd`/local/fonts:/app/fonts \
+			-v `pwd`/local/swir/ep.json:/app/fonts/ep.json \
+			node bash -c 'cd /app && node kggenerate.js kana3-kgmap.json 2'; \
+		echo "Font generation complete. Updating checksum."; \
+		mv $(NEW_CHECKSUM_FILE) $(CHECKSUM_FILE); \
+	)
+	rm -f $(NEW_CHECKSUM_FILE)
+	@touch $@
+#
+$(NEW_CHECKSUM_FILE): $(DEPS_KANA3B_TTF)
+	@echo "Dependencies for kana3b.ttf changed. Calculating new checksum."
+	@mkdir -p $(@D)
+	@find $(DEPS_KANA3B_TTF) -type f -exec sha1sum {} + | sort -k 2 | sha1sum | cut -d' ' -f1 > $@
 
 local-swdata-repo:
 	$(GIT) clone --depth 1 https://github.com/suikawiki/suikawiki-data local/data || \
