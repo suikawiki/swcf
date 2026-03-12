@@ -3,7 +3,7 @@
     "pmbp": "latest",
     "build": [
       "make deps build-for-docker",
-      {"docker_build": "quay.io/suikawiki/swfonts:swcf"}
+      "make docker-build DOCKER_IMAGE=quay.io/suikawiki/swfonts:swcf"
     ],
     "tests": {"~deploy": [
       {"docker_push": "quay.io/suikawiki/swfonts:swcf"}

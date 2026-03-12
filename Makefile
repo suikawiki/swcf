@@ -70,10 +70,29 @@ build-gp-cleanup:
 	rm -fr ./bin/modules ./modules ./local ./deps
 	rm config/perl/libs.txt
 
-build-for-docker: build-for-docker-from-old \
-    local/swir local/swcfk
-#	-chmod ugo+r -R local/swir
-#	-chmod ugo+r -R local/swcfk
+build-for-docker:
+	@echo "--- Preparing initial build context from old image..."
+	@$(MAKE) build-for-docker-from-old
+	#
+	@echo "--- Saving state of initial build context..."
+	@rm -rf local/swir.old local/swcfk.old
+	@cp -a local/swir local/swir.old
+	@cp -a local/swcfk local/swcfk.old
+	#
+	@echo "--- Applying updates to build context..."
+	@$(MAKE) local/swir local/swcfk
+	#
+	@echo "--- Comparing build context content (before vs. after)..."
+	@if diff -q -r local/swir.old local/swir && diff -q -r local/swcfk.old local/swcfk; then \
+		echo "\033[32m✔ No content changes detected. Docker build can be skipped.\033[0m"; \
+		touch .build-skip-flag; \
+	else \
+		echo "\033[33m⚠ Content changes detected. Docker build is required.\033[0m"; \
+		rm -f .build-skip-flag; \
+	fi
+	#
+	@echo "--- Cleaning up temporary directories..."
+	@rm -rf local/swir.old local/swcfk.old
 
 build-for-docker-from-old:
 	mkdir -p local
@@ -154,6 +173,18 @@ $(NEW_CHECKSUM_FILE): $(DEPS_KANA3B_TTF)
 	@echo "Dependencies for kana3b.ttf changed. Calculating new checksum."
 	@mkdir -p $(@D)
 	@find $(DEPS_KANA3B_TTF) -type f -exec sha1sum {} + | sort -k 2 | sha1sum | cut -d' ' -f1 > $@
+
+## REQUIRED: DOCKER_IMAGE=...
+DOCKER_IMAGE=
+docker-build: build-for-docker
+	@echo "--- Checking build context status... ---"
+	@if [ -f .build-skip-flag ]; then \
+		echo "\033[32m✔ Build context is unchanged. Skipping docker build.\033[0m"; \
+		rm .build-skip-flag; \
+	else \
+		echo "\033[33m⚠ Build context has changed. Proceeding with docker build...\033[0m"; \
+		docker build --cache-from $(DOCKER_IMAGE) -t $(DOCKER_IMAGE) .; \
+	fi
 
 local-swdata-repo:
 	$(GIT) clone --depth 1 https://github.com/suikawiki/suikawiki-data local/data || \
