@@ -77,8 +77,8 @@ build-for-docker: build-for-docker-from-old \
 
 build-for-docker-from-old:
 	mkdir -p local
-	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -R /app/fonts/swir /local/swir || mkdir -p local/swir
-	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -R /app/fonts/swcfk /local/swcfk || mkdir -p local/swcfk
+	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -a /app/fonts/swir /local/swir || mkdir -p local/swir
+	docker run -v `pwd`/local:/local --user `id --user` quay.io/suikawiki/swfonts:swcf cp -a /app/fonts/swcfk /local/swcfk || mkdir -p local/swcfk
 
 ## <https://suikawiki.github.io/swcf/current/swir/list.json>
 ##    List of regions.
