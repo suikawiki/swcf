@@ -72,8 +72,8 @@ build-gp-cleanup:
 
 build-for-docker: build-for-docker-from-old \
     local/swir local/swcfk
-	-chmod ugo+r -R local/swir
-	-chmod ugo+r -R local/swcfk
+#	-chmod ugo+r -R local/swir
+#	-chmod ugo+r -R local/swcfk
 
 build-for-docker-from-old:
 	mkdir -p local
