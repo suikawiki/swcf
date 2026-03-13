@@ -176,7 +176,7 @@ $(NEW_CHECKSUM_FILE): $(DEPS_KANA3B_TTF)
 
 ## REQUIRED: DOCKER_IMAGE=...
 DOCKER_IMAGE=
-docker-build: build-for-docker
+docker-build:
 	@echo "--- Checking build context status... ---"
 	@if [ -f .build-skip-flag ]; then \
 		echo "\033[32m✔ Build context is unchanged. Skipping docker build.\033[0m"; \
