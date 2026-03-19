@@ -413,6 +413,7 @@ async function getRegionBoundaryArray (image, opts) {
   
   let count = Object.keys (json.groups).length;
   let i = 0;
+  let updated = 0;
   for (let groupRef in json.groups) {
     if ((i++ % 10) === 0) {
       process.stderr.write (`\r${i}/${count}... `);
@@ -420,6 +421,11 @@ async function getRegionBoundaryArray (image, opts) {
 
     let ref = json.groups[groupRef].chosen_region_ref;
     if (!ref) continue;
+
+    if (updated++ > 100) {
+      process.stderr.write ("Too many new items, skipped");
+      break;
+    }
     
     let item = await createGlyphData (ref);
     if (!item) continue; // not a new item

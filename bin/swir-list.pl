@@ -16,6 +16,7 @@ my $FreeLicenseKeys = {
   "CC-BY-3.0" => 1,
   "CC-BY-4.0" => 1,
   "-ddsd-kulib-free-normal" => 1,
+  "-ddsd-kyuudai-PublicDomain" => 1,
   "CC-BY-SA-4.0" => 1,
   "-ddsd-pdl1.0" => 1,
 };

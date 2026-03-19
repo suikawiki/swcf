@@ -166,7 +166,7 @@ my $Data = {};
             push @item, ['g', $1, 'eg'];
           } elsif (/^(ex[1-9][0-9]*)$/) {
             push @item, ['g', $1, 'ex'];
-          } elsif (/^(:ep-[0-9a-z_-]+-[0-9a-f]+)$/) {
+          } elsif (/^(:ep-[0-9A-Za-z_-]+-[0-9a-f]+)$/) {
             push @item, ['g', $1, 'ep'];
           } elsif (/^([a-z][0-9a-z_-]+)$/) {
             push @item, ['gw', $1, ''];

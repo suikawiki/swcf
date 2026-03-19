@@ -31,6 +31,7 @@ for (
     "CC-PDM-1.0" => 1,
     "CC-BY-4.0" => 1,
     "CC-BY-SA-4.0" => 1,
+    "-ddsd-kyuudai-PublicDomain" => 1,
   }],
 ) {
   my ($key, $file_name, %opts) = @$_;

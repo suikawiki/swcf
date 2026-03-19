@@ -2901,7 +2901,7 @@ if (defined $Keys->{output_file_names}->{kgmap}) {
     $Data->{variant_tags} = [];
   }
   my $out_path = path ($Keys->{output_file_names}->{kgmap});
-  $out_path->spew (perl2json_bytes_for_record $Data);
+  $out_path->spew (perl2json_bytes_for_record $Data); # must be _for_record for stability required by following processes in the pipeline
 }
 
 if (defined $Keys->{output_file_names}->{keys}) {
