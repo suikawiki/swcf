@@ -2340,7 +2340,8 @@ sub set_glyph ($) {
                 push @gid, $key_to_gid->{ord $char} // die;
               }
             } elsif (defined $Keys->{large}->{chr $_}) {
-              push @gid, $key_to_gid->{(ord $Keys->{large}->{chr $_})} // die;
+              push @gid, $key_to_gid->{(ord $Keys->{large}->{chr $_})} //
+                  ($Data->{cmap}->{(ord $Keys->{large}->{chr $_})} = $key_to_gid->{(ord $Keys->{large}->{chr $_})} = put_glyph ['cmap', 'base', 0x3013]);
               push @gid, $Data->{named_glyphs}->{SMAL};
             } else {
               push @gid, $key_to_gid->{$_} // die;
