@@ -374,7 +374,7 @@ import { PQ } from './pq.js';
           let m = inputURL.hash.match (/^#page=([0-9]+)\b/);
           if (m) imageAccess.pageNumber = parseInt (m[1]);
           imageSource.pageURL = inputURL.href.replace (/#.*$/, '');
-          imageSource.key = 'unknown-' + inputURL.href.replace (/([^A-Za-wyz0-9])/g, (_, c) => '_' + c.codePointAt (0).toString (16).toUpperCase ());
+          imageSource.key = 'unknown-' + imageSource.pageURL.replace (/([^A-Za-wyz0-9])/g, (_, c) => '_' + c.codePointAt (0).toString (16).toUpperCase ());
           imageAccess.needTypeCheck = true;
           break;
         }
@@ -401,9 +401,8 @@ import { PQ } from './pq.js';
     async resolveImageSource ({imageSource, imageAccess}) {
       if (imageAccess.useOGImage &&
           !(imageAccess.imageURL || imageSource.imageURL)) {
-        let fURL = this.config.image_proxy_url_prefix + imageSource.pageURL;
-        await fetch (fURL, {mode: 'cors'}).then (res => {
-          if (res.status !== 200) throw res;
+        let fURL = "" + imageSource.pageURL;
+        await PQ.env.getImageResponse (fURL, {}).then (res => {
           return res.text ();
         }).then (text => {
           let doc = PQ.env.parseHTML (text);
@@ -419,9 +418,8 @@ import { PQ } from './pq.js';
 
       if (imageAccess.needTypeCheck &&
           !(imageAccess.imageURL || imageSource.imageURL)) {
-        let fURL = this.config.image_proxy_url_prefix + imageSource.pageURL;
-        await fetch (fURL, {mode: 'cors'}).then (res => {
-          if (res.status !== 200) throw res;
+        let fURL = "" + imageSource.pageURL;
+        await PQ.env.getImageResponse (fURL, {}).then (res => {
           if (res.headers.get ('content-type')?.match (/^(?:image\/vnd\.djvu|image\/x.djvu|image\/x-djvu|image\/djvu)\b/)) {
             imageAccess.pageNumber = imageSource.pageNumber ??= imageAccess.pageNumber ?? 1;
             imageAccess.imageURL = imageSource.pageURL;
@@ -448,9 +446,8 @@ import { PQ } from './pq.js';
       let iiifJSON;
       if ((imageAccess.iiifURL || imageSource.iiifURL) &&
           !(imageAccess.imageURL || imageSource.imageURL)) {
-        let fURL = this.config.image_proxy_url_prefix + (imageAccess.iiifURL || imageSource.iiifURL);
-        iiifJSON = await fetch (fURL, {mode: 'cors'}).then (res => {
-          if (res.status !== 200) throw res;
+        let fURL = "" + (imageAccess.iiifURL || imageSource.iiifURL);
+        iiifJSON = await PQ.env.getImageResponse (fURL, {}).then (res => {
           return res.json ();
         });
 
@@ -488,10 +485,9 @@ import { PQ } from './pq.js';
         }
       } else if ((imageAccess.iiifURL || imageSource.iiifURL) &&
                  !imageSource.legalKey) {
-        let fURL = this.config.image_proxy_url_prefix + (imageAccess.iiifURL || imageSource.iiifURL);
+        let fURL = "" + (imageAccess.iiifURL || imageSource.iiifURL);
         try {
-          iiifJSON = await fetch (fURL, {mode: 'cors'}).then (res => {
-            if (res.status !== 200) throw res;
+          iiifJSON = await PQ.env.getImageResponse (fURL, {}).then (res => {
             return res.json ();
           });
         } catch (e) { }
@@ -618,10 +614,6 @@ import { PQ } from './pq.js';
       } // iiifURL
       
       let fURL = (imageAccess.imageURL || imageSource.imageURL) + '';
-      if (!imageAccess.isInternal) {
-        fURL = this.config.image_proxy_url_prefix + fURL;
-      }
-
       let getImg;
       if (opts.useCache) {
         this._cache ??= new Map;
@@ -630,12 +622,15 @@ import { PQ } from './pq.js';
       }
       if (imageAccess.imageType === 'djvu') {
         if (!getImg) {
-          getImg = PQ.env.createImageDataByDjvuURL (fURL, imageAccess.pageNumber);
+          getImg = PQ.env.getImageResponse (fURL, {isInternal: imageAccess.isInternal}).then (res => {
+            return PQ.env.createImageDataByDjvuResponse
+                (res, imageAccess.pageNumber);
+          });
           getImg.method = 'fromImageData';
         }
       } else {
         if (!getImg) {
-          getImg = PQ.env.createImg (fURL);
+          getImg = PQ.env.getImageResponse (fURL, {isInternal: imageAccess.isInternal}).then (res => PQ.env.createImgByResponse (res));
           getImg.method = 'fromImg';
         }
       }
@@ -705,7 +700,11 @@ export class ClassicAnnotationStorage {
     }
 
     if (this.config.load_annotation_url_prefix) {
-      let u = this.config.load_annotation_url_prefix + 'annotation-' + imageSource.key + '--' + imageSource.transformKey + '.json';
+      let kkey = imageSource.key;
+      if (100 < kkey.length) {
+        kkey = await PQ.env.sha1Hex (kkey);
+      }
+      let u = this.config.load_annotation_url_prefix + 'annotation-' + kkey + '--' + imageSource.transformKey + '.json';
       let json = await fetch (u, {cache: 'reload'}).then (res => {
         if (res.status === 200) {
           return res.json ();
