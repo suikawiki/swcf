@@ -154,6 +154,7 @@ NEW_CHECKSUM_FILE = $(CHECKSUM_FILE).new
 #
 local/swcfk/kana3b.ttf: $(NEW_CHECKSUM_FILE)
 	(cmp -s $(NEW_CHECKSUM_FILE) $(CHECKSUM_FILE) && test -f "$@" ) || ( \
+	        set -e; \
 		echo "Inputs for $@ have changed or target is missing. Generating font..."; \
 		docker run -i \
 			-v `pwd`/js:/app \
