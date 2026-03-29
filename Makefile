@@ -80,8 +80,10 @@ build-for-docker:
 	@cp -a local/swcfk local/swcfk.old
 	#
 	@echo "--- Applying updates to build context..."
+	@echo "--- SWIR..."
 	@$(MAKE) local/swir
 	@if [ $$(awk 'BEGIN{srand(); print rand()}') \< 0.5 ]; then \
+		@echo "--- SWCFK..."; \
 		$(MAKE) local/swcfk; \
 	fi
 	#
