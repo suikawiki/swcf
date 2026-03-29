@@ -80,7 +80,10 @@ build-for-docker:
 	@cp -a local/swcfk local/swcfk.old
 	#
 	@echo "--- Applying updates to build context..."
-	@$(MAKE) local/swir local/swcfk
+	@$(MAKE) local/swir
+	@if [ $$(awk 'BEGIN{srand(); print rand()}') \< 0.5 ]; then \
+		$(MAKE) local/swcfk; \
+	fi
 	#
 	@echo "--- Comparing build context content (before vs. after)..."
 	@if diff -q -r local/swir.old local/swir && diff -q -r local/swcfk.old local/swcfk; then \
@@ -133,7 +136,7 @@ local/swir/ep.json: js/*.js local/swir/list.json
             -v `pwd`/local/swir/list.json:/app/local/list.json \
             -v `pwd`/local/swir/ep.json:/app/local/paths.json \
 	    -w /app \
-	    node bash -c 'npm install canvas && node construct-ep-json.js'
+	    node bash -c 'npm install canvas sharp && node construct-ep-json.js'
 	ls -l $@
 
 local/swcfk: always
