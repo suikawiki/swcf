@@ -1,15 +1,14 @@
 import fs from 'fs/promises';
 import { createCanvas, loadImage } from "canvas";
+import sharp from "sharp";
 import { PQ } from './pq.js';
 import * as AIS from './ais.js';
 import Config from './construct-ep-json-config.js';
 
 PQ.env.createCanvas = createCanvas;
-PQ.env.createImg = async url => {
-  let res = await fetch (url);
-  if (res.status !== 200) throw res;
+PQ.env.createImgByResponse = async res => {
   let buffer = Buffer.from (await res.arrayBuffer ());
-  let img = await loadImage (buffer);
+  let img = await loadImage (await sharp (buffer).png ().toBuffer ());
   //img.naturalWidth = img.width;
   //img.naturalHeight = img.height;
   return img;
