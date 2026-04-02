@@ -420,11 +420,6 @@ async function getRegionBoundaryArray (image, opts) {
 
     let ref = json.groups[groupRef].chosen_region_ref;
     if (!ref) continue;
-
-    if (updated++ > 100) {
-      process.stderr.write ("Too many new items, skipped");
-      break;
-    }
     
     let item = await createGlyphData (ref);
     if (!item) continue; // not a new item
@@ -432,6 +427,11 @@ async function getRegionBoundaryArray (image, opts) {
     if (item.size_ref) {
       psList[ref].sizeRef = item.size_ref;
       await createGlyphData (item.size_ref);
+    }
+
+    if (updated++ > 100) {
+      process.stderr.write ("Too many new items, skipped!\n");
+      break;
     }
   } // groupRef
 
