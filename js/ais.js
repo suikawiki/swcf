@@ -103,6 +103,18 @@ import { PQ } from './pq.js';
             imageAccess.hasLegal = "ndl";
           }
           break;
+        } else if (inputEPType === 'ndlx') {
+          let m = inputEP.match (/^([0-9]+)-([0-9]+)(?:-([0-9a-z]+)|)$/);
+          if (m) {
+            let x = m[1];
+            let y = m[2];
+            imageSource.key = `ndlx-${x}-${y}`;
+            imageAccess.imageURL = this.config.ndlx_url + `?pid=${x}&koma=${y}`;
+            imageAccess.isInternal = true;
+            imageSource.pageURL = "https://dl.ndl.go.jp/pid/"+x+"/1/"+y;
+            imageRegion.regionKey ??= m[3]; // or undefined
+          }
+          break;
         } else if (inputURL.hostname === 'dl.ndl.go.jp') {
           let p = inputURL.pathname.split (/\//g);
           if (p[1] === 'pid') {
@@ -115,6 +127,7 @@ import { PQ } from './pq.js';
             imageSource.pageURL = "https://dl.ndl.go.jp/pid/"+x+"/1/"+y;
             imageSource.iiifURL = "https://dl.ndl.go.jp/api/iiif/"+x+"/manifest.json";
             imageAccess.hasLegal = "ndl";
+            imageAccess.ndlOrNdlx = true;
           } else if (p[1] === 'info:ndljp') {
             // https://dl.ndl.go.jp/info:ndljp/pid/2566606/2
             let x = p[3];
@@ -125,6 +138,7 @@ import { PQ } from './pq.js';
             imageSource.pageURL = "https://dl.ndl.go.jp/pid/"+x+"/1/"+y;
             imageSource.iiifURL = "https://dl.ndl.go.jp/api/iiif/"+x+"/manifest.json";
             imageAccess.hasLegal = "ndl";
+            imageAccess.ndlOrNdlx = true;
           }
           break;
         }
@@ -440,6 +454,25 @@ import { PQ } from './pq.js';
           }
         });
       } // needTypeCheck
+
+      if (imageAccess.ndlOrNdlx && this.config.ndlx_url) {
+        let fURL = "" + imageSource.imageURL;
+        let isOpen = await PQ.env.getImageResponse (fURL, {}).then (res => {
+          return true;
+        }, error => false);
+        if (!isOpen) {
+          let m = imageSource.key.match (/^ndl-([0-9]+)-([0-9]+)$/);
+          if (!m) throw "Bad ndl key |"+imageSource.key+"|";
+          imageSource.key = `ndlx-${m[1]}-${m[2]}`;
+          delete imageSource.imageURL;
+          imageAccess.imageURL = this.config.ndlx_url + `?pid=${m[1]}&koma=${m[2]}`;
+          //imageSource.pageURL = "https://dl.ndl.go.jp/pid/"+x+"/1/"+y;
+          delete imageSource.iiifURL;
+          delete imageAccess.hasLegal;
+          //imageAccess.ndlOrNdlx = true;
+          imageAccess.isInternal = true;
+        }
+      }
     } // resolveImageSource
 
     async getImageByImageAccess ({imageSource, imageAccess}, opts = {}) {
