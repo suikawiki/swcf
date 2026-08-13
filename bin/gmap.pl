@@ -9,7 +9,7 @@ my $Data = {};
   my $name = shift;
   my $path = path ($name);
   my $is_kana = $name =~ /kana|ryuukyuu/;
-  my $ScriptFeatPattern = qr/HIRA|KATA|KRTR|KNNA|MRTN|AHIR|HTMA|KTDM|ANIT|TYKN|TYKO|HSMI|IZMO|KIBI|TATU|AHKS|NKTM|IRHO|NANC|UMAS|TUSM|TNKS|AWAM|KIBK|KAMI|RUKU|HNDE|NHSJ|TAYM|MROK/;
+  my $ScriptFeatPattern = qr/HIRA|KATA|KRTR|KNNA|MRTN|AHIR|HTMA|KTDM|ANIT|TYKN|TYKO|HSMI|IZMO|KIBI|TATU|AHKS|NKTM|IRHO|NANC|UMAS|TUSM|TNKS|AWAM|KIBK|KAMI|RUKU|HNDE|NHSJ|TAYM|MROK|HANI/;
   for (split /\n/, $path->slurp_utf8) {
     if (/^\s*#/) {
       #

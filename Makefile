@@ -126,7 +126,7 @@ local/swir: local-swdata-repo always
 	mkdir -p $@
 	$(MAKE) $@/list.json $@/ep.json $@/gmap.txt $@/gmap.json
 local/swir/list.json: bin/swir-list.pl local/swdata-swir-list.txt
-	$(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
+	SCRIPT_SET=nanbu $(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
 local/swir/gmap.txt: bin/swir-list-to-gmap.pl local/swir/list.json
 	$(PERL) $< local/swir/list.json > $@
 local/swir/gmap.json: bin/gmap.pl local/swir/gmap.txt

@@ -3,15 +3,21 @@ use warnings;
 use utf8;
 use JSON::PS;
 
-my $ScriptTags = {qw(
-  田山文字 TAYM
-  盛岡文字 MROK
-  日本新字 NHSJ
-  漢字 HANI
-  平仮名 KANA
-  片仮名 KANA
-  仮名 KANA
-)};
+my $ScriptSet = $ENV{SCRIPT_SET} // '';
+
+my $ScriptTags = {};
+if ($ScriptSet eq 'nanbu') {
+  $ScriptTags->{田山文字} = 'TAYM';
+  $ScriptTags->{盛岡文字} = 'MROK';
+} elsif ($ScriptSet eq 'kanji') {
+  $ScriptTags->{漢字} = 'HANI';
+} elsif ($ScriptSet eq 'kana') {
+  $ScriptTags->{平仮名} = 'HIRA';
+  $ScriptTags->{片仮名} = 'KATA';
+  $ScriptTags->{仮名} = 'HIRA';
+} else {
+  die "Bad SCRIP_SET |$ScriptSet|";
+}
 
 my $FreeLicenseKeys = {
   "CC0-1.0" => 1,
