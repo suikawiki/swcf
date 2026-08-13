@@ -7,6 +7,10 @@ my $ScriptTags = {qw(
   田山文字 TAYM
   盛岡文字 MROK
   日本新字 NHSJ
+  漢字 HANI
+  平仮名 KANA
+  片仮名 KANA
+  仮名 KANA
 )};
 
 my $FreeLicenseKeys = {
@@ -142,14 +146,14 @@ for (<>) {
     }
     #
     my $style = -1;
-    for (0..8) { # u0 u1 u2 ... u8
+    for (0..9) { # u0 u1 u2 ... u8 u9
       $style = $_ if $data->{tags}->{'u'.$_};
     }
     $data->{_style} = $style;
     $style = 0 if $style == -1;
     #
     my $variant = -1;
-    for (0..5) { # v0 v1 v2 v3 v4 v5
+    for (0..9) { # v0 v1 v2 v3 v4 v5 v6 v7 v8 v9
       $variant = $_ if $data->{tags}->{'v'.$_};
     }
     $data->{_variant} = $variant;
@@ -157,10 +161,10 @@ for (<>) {
       MROK => 1,
     }->{$script} and $data->{tags}->{縦}) {
       if ($variant > -1) {
-        $variant += 5;
+        $variant += 10;
         $data->{_variant} = $variant;
       }
-      $variant = 5 if $variant == -1;
+      $variant = 10 if $variant == -1;
     } else {
       $variant = 0 if $variant == -1;
     }
@@ -270,8 +274,8 @@ Tags
 
   Glyph classifications:
   
-  v0 v1 .. v5   Variant ID.
-  u0 u1 .. u8   Style difference ID.
+  v0 v1 .. v9   Variant ID.
+  u0 u1 .. u9   Style difference ID.
   d1 d2         Voiced mark differences.
 
   Source types:  

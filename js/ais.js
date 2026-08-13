@@ -723,7 +723,7 @@ export class ClassicAnnotationStorage {
     if (this.config.sw_storage_url_prefix) {
       let pageName = 'SWIR//' + imageSource.key + '//' + imageSource.transformKey;
       let json = await fetch (this.config.sw_storage_url_prefix + encodeURIComponent (pageName) + '?format=text', {
-        cache: 'reload',
+        cache: 'no-store',
       }).then (res => {
         if (res.status === 404) return null;
         if (res.status !== 200) throw res;
@@ -738,7 +738,7 @@ export class ClassicAnnotationStorage {
         kkey = await PQ.env.sha1Hex (kkey);
       }
       let u = this.config.load_annotation_url_prefix + 'annotation-' + kkey + '--' + imageSource.transformKey + '.json';
-      let json = await fetch (u, {cache: 'reload'}).then (res => {
+      let json = await fetch (u, {cache: 'no-store'}).then (res => {
         if (res.status === 200) {
           return res.json ();
         } else if (res.status === 404) {
