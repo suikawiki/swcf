@@ -771,7 +771,23 @@ const createDestFont = (sf) => {
                    //bsquared: true, rsquared: true, rbsquared: true,
                  }[glyphRef[0]]) {
         let paths = inFonts[glyphRef[1]].getGlyphPaths (glyphRef[2], df.upem, df.ascender, df.descender);
-        if (paths == null) throw new Error ('Unknown glyph name |'+glyphRef[2]+'|');
+        if (paths == null) {
+          glyphRef = ['cmap', 'base', 0x3013];
+          {
+            var glyphId = inFonts[glyphRef[1]].unicodeCmap.glyphIndexMap[glyphRef[2]];
+            let glyph = copyGlyph (inFonts[glyphRef[1]], glyphId, df, {
+              reHeight: inFonts[glyphRef[1]].reHeight,
+              reWidth: inFonts[glyphRef[1]].reWidth,
+            });
+            let gid = df.glyphs.length;
+            
+            df.glyphs.push (glyph);
+            code (glyph);
+            return gid;
+          }
+          throw new Error ('Unknown glyph name |'+glyphRef[2]+'|');
+        }
+        
         let path = paths[0];
         let redPath = path.redPath;
 
@@ -1316,6 +1332,7 @@ const createDestFont = (sf) => {
         'TATU', 'AHKS', 'NKTM', 'IRHO', 'NANC', 'UMAS', 'TUSM', 'KAMI',
         'RUKU', 'HNDE', 'TAYM', 'MROK',
         'OCRF',
+        'HANI',
       ];
       let ScriptFeats = [...KanaScriptFeats, ...NonKanaScriptFeats];
       ScriptFeats.forEach (f => {

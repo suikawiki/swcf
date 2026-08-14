@@ -126,29 +126,51 @@ local/swir: local-swdata-repo always
 	mkdir -p $@
 	$(MAKE) $@/list.json $@/ep.json $@/gmap.txt $@/gmap.json
 local/swir/list.json: bin/swir-list.pl local/swdata-swir-list.txt
+	SCRIPT_SET=full $(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
+local/swir/list3.json: bin/swir-list.pl local/swdata-swir-list.txt
 	SCRIPT_SET=nanbu $(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
+local/swir/list4.json: bin/swir-list.pl local/swdata-swir-list.txt
+	SCRIPT_SET=kanji $(PERL) bin/swir-list.pl local/swdata-swir-list.txt > $@
 local/swir/gmap.txt: bin/swir-list-to-gmap.pl local/swir/list.json
 	$(PERL) $< local/swir/list.json > $@
 local/swir/gmap.json: bin/gmap.pl local/swir/gmap.txt
 	$(PERL) $< local/swir/gmap.txt > $@
-local/swir/ep.json: js/*.js local/swir/list.json
+local/swir/gmap4.txt: bin/swir-list-to-gmap.pl local/swir/list4.json
+	$(PERL) $< local/swir/list4.json > $@
+local/swir/gmap4.json: bin/gmap.pl local/swir/gmap4.txt
+	$(PERL) $< local/swir/gmap4.txt > $@
+local/swir/ep.json: js/*.js local/swir/list3.json
 	ls -l $@ || echo '{}' > $@
 	docker run -i \
             -v `pwd`/js:/app \
-            -v `pwd`/local/swir/list.json:/app/local/list.json \
+            -v `pwd`/local/swir/list3.json:/app/local/list.json \
             -v `pwd`/local/swir/ep.json:/app/local/paths.json \
+	    -w /app \
+	    node bash -c 'npm install canvas sharp && node construct-ep-json.js'
+	ls -l $@
+local/swir/ep4.json: js/*.js local/swir/list4.json
+	ls -l $@ || echo '{}' > $@
+	docker run -i \
+            -v `pwd`/js:/app \
+            -v `pwd`/local/swir/list4.json:/app/local/list.json \
+            -v `pwd`/local/swir/ep4.json:/app/local/paths.json \
 	    -w /app \
 	    node bash -c 'npm install canvas sharp && node construct-ep-json.js'
 	ls -l $@
 
 local/swcfk: always
 	mkdir -p $@
-	$(MAKE) $@/kana3b.ttf
+	$(MAKE) $@/kana3b.ttf $@/kana4b.ttf
 local/swir-gmap.json: local/swir/gmap.json
+	cp $< $@
+local/swir-gmap4.json: local/swir/gmap4.json
 	cp $< $@
 local/swcfk/kana3-kgmap.json: bin/kgmap.pl config/kana3-config.pl \
     local/swir-gmap.json
 	GMAP_PATH=./local/ OUT_PATH=./local/swcfk/ $(PERL) $< config/kana3-config.pl
+local/swcfk/kana4-kgmap.json: bin/kgmap.pl config/kana4-config.pl \
+    local/swir-gmap4.json
+	GMAP_PATH=./local/ OUT_PATH=./local/swcfk/ $(PERL) $< config/kana4-config.pl
 
 DEPS_KANA3B_TTF = js/kggenerate.js js/otwriter.js local/opentype.js \
     local/swcfk/kana3-kgmap.json \
@@ -179,6 +201,36 @@ $(NEW_CHECKSUM_FILE): $(DEPS_KANA3B_TTF)
 	@echo "Dependencies for kana3b.ttf changed. Calculating new checksum."
 	@mkdir -p $(@D)
 	@find $(DEPS_KANA3B_TTF) -type f -exec sha1sum {} + | sort -k 2 | sha1sum | cut -d' ' -f1 > $@
+#
+DEPS_KANA4B_TTF = js/kggenerate.js js/otwriter.js local/opentype.js \
+    local/swcfk/kana4-kgmap.json \
+    local/fonts/frq0.ttf local/swir/ep4.json
+#
+CHECKSUM4_FILE = local/swcfk/kana4b.ttf.sha1sum
+NEW_CHECKSUM4_FILE = $(CHECKSUM4_FILE).new
+#
+local/swcfk/kana4b.ttf: $(NEW_CHECKSUM4_FILE)
+	(cmp -s $(NEW_CHECKSUM4_FILE) $(CHECKSUM4_FILE) && test -f "$@" ) || ( \
+	        set -e; \
+		echo "Inputs for $@ have changed or target is missing. Generating font..."; \
+		docker run -i \
+			-v `pwd`/js:/app \
+			-v `pwd`/local/swcfk/kana4-kgmap.json:/app/kana4-kgmap.json \
+			-v `pwd`:/app/data \
+			-v `pwd`/local/opentype.js:/app/opentype.js \
+			-v `pwd`/local/fonts:/app/fonts \
+			-v `pwd`/local/swir/ep4.json:/app/fonts/ep.json \
+			node bash -c 'cd /app && node kggenerate.js kana4-kgmap.json 2'; \
+		echo "Font generation complete. Updating checksum."; \
+		mv $(NEW_CHECKSUM4_FILE) $(CHECKSUM4_FILE); \
+	)
+	rm -f $(NEW_CHECKSUM4_FILE)
+	@touch $@
+#
+$(NEW_CHECKSUM4_FILE): $(DEPS_KANA4B_TTF)
+	@echo "Dependencies for kana4b.ttf changed. Calculating new checksum."
+	@mkdir -p $(@D)
+	@find $(DEPS_KANA4B_TTF) -type f -exec sha1sum {} + | sort -k 2 | sha1sum | cut -d' ' -f1 > $@
 
 ## REQUIRED: DOCKER_IMAGE=...
 DOCKER_IMAGE=

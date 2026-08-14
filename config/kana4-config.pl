@@ -1,0 +1,49 @@
+use strict;
+use warnings;
+
+our $Keys;
+our $Data;
+
+$Keys->{gmap_file_names} = [map { ($ENV{GMAP_PATH} // '.') . "/" . $_ } 
+  'swir-gmap4.json',
+];
+$Keys->{input_file_names} = {};
+$Keys->{output_file_names} = {
+  kgmap => ($ENV{OUT_PATH} // '.') . '/kana4-kgmap.json',
+  font_map => ($ENV{OUT_PATH} // '.') . '/kana4-fontmap.json',
+};
+
+$Data->{fonts}->{parts} = {
+  2 => {
+    name => 'SWCF Kana4 B',
+    outFileName=> ($ENV{OUT_PATH} // '.') . '/kana4b.ttf',
+    source_keys => [],
+    baseFontKey=> 'frq0',
+    license_type => 'ccbysa40',
+  },
+};
+
+for (
+  [frq0 => 'frq0.ttf'],
+      
+  [ep => 'ep.json', type => 'ep', allowed_legal_keys => {
+    "-ddsd-ndl-PDM" => 1,
+    "CC-PDM-1.0" => 1,
+    "CC-BY-4.0" => 1,
+    "CC-BY-SA-4.0" => 1,
+    "-ddsd-kulib-free-normal" => 1,
+    "-ddsd-kyuudai-PublicDomain" => 1,
+  }],
+) {
+  my ($key, $file_name, %opts) = @$_;
+  $Data->{fonts}->{sources}->{$key}->{file_name} = $file_name;
+  for (keys %opts) {
+    $Data->{fonts}->{sources}->{$key}->{$_} = $opts{$_};
+  }
+  $Data->{fonts}->{sources}->{$key}->{part_key} = 2;
+  push @{$Data->{fonts}->{parts}->{2}->{source_keys}}, $key;
+}
+
+1;
+
+## License: Public Domain.

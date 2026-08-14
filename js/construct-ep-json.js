@@ -395,7 +395,8 @@ async function getRegionBoundaryArray (image, opts) {
     }
 
     try {
-      let image = await dataSource.getClippedImageData (parsed, {useCache: true});
+      let image = await dataSource.getClippedImageData (parsed, {useCache: true, allowNoImage: true});
+      if (image === null) return null;
       let regionBoundaryArray = await getRegionBoundaryArray (image, {});
       psList[ref] = {
         v: CurrentVersion,
@@ -420,19 +421,27 @@ async function getRegionBoundaryArray (image, opts) {
 
     let ref = json.groups[groupRef].chosen_region_ref;
     if (!ref) continue;
+
+    try {
+      let item = await createGlyphData (ref);
+      if (!item) continue; // not a new item
     
-    let item = await createGlyphData (ref);
-    if (!item) continue; // not a new item
-    
-    if (item.size_ref) {
-      psList[ref].sizeRef = item.size_ref;
-      await createGlyphData (item.size_ref);
+      if (item.size_ref) {
+        psList[ref].sizeRef = item.size_ref;
+        await createGlyphData (item.size_ref);
+      }
+    } catch (e) {
+      console.log ("Glyph construction error", e);
+      if (updated) await fs.writeFile (EPJsonPath, JSON.stringify (psList));
+      throw e;
     }
 
     if (updated++ > 100) {
       process.stderr.write ("Too many new items, skipped!\n");
       break;
     }
+
+    await new Promise (ok => setTimeout (ok, 1000));
   } // groupRef
 
   process.stderr.write ("done\n");

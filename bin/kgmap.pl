@@ -20,6 +20,7 @@ $Keys->{kana3_feature_tags} = [qw(
 my $ScriptFeatList = $Keys->{script_feature_tags} = [qw(
   HIRA KATA
   OCRF
+  HANI
 ), @{$Keys->{kana2_feature_tags}}, @{$Keys->{kana3_feature_tags}}]; 
 my $ScriptFeatPattern = join '|', @{$Keys->{script_feature_tags}};
 

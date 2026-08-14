@@ -109,8 +109,10 @@ import { PQ } from './pq.js';
             let x = m[1];
             let y = m[2];
             imageSource.key = `ndlx-${x}-${y}`;
-            imageAccess.imageURL = this.config.ndlx_url + `?pid=${x}&koma=${y}`;
-            imageAccess.isInternal = true;
+            if (this.config.ndlx_url) {
+              imageAccess.imageURL = this.config.ndlx_url + `?pid=${x}&koma=${y}`;
+              imageAccess.isInternal = true;
+            }
             imageSource.pageURL = "https://dl.ndl.go.jp/pid/"+x+"/1/"+y;
             imageRegion.regionKey ??= m[3]; // or undefined
           }
@@ -322,8 +324,10 @@ import { PQ } from './pq.js';
           let m = inputEP.match (/^([A-Za-z0-9_]+)(?:-([a-z0-9]+)|)$/);
           if (m) {
             let d = m[1].replace (/_([0-9A-F]{2})/g, (x, _) => String.fromCodePoint (parseInt (_, 16)));
-            imageAccess.imageURL = this.config.internal_url_prefix + 'books/' + d;
-            imageAccess.isInternal = true;
+            if (this.config.internal_url_prefix) {
+              imageAccess.imageURL = this.config.internal_url_prefix + 'books/' + d;
+              imageAccess.isInternal = true;
+            }
             let e = d.replace (/_/g, '_5F').replace (/\./g, '_2E').replace (/\//g, '_2F').replace (/^x/, '_78');
             imageSource.key = 'books-' + e;
             imageRegion.regionKey ??= m[2]; // or undefined
@@ -364,8 +368,10 @@ import { PQ } from './pq.js';
             imageSource.pageURL = m[1].replace (/_([0-9A-F]{2})/g, (_, x) => String.fromCodePoint (parseInt (x, 16)));
             imageSource.pageNumber = parseInt (m[2]);
             imageSource.key = 'pdf-' + imageSource.pageURL.replace (/([^A-Za-wyz0-9])/g, (_, c) => '_' + c.codePointAt (0).toString (16).toUpperCase ()) + '-' + imageSource.pageNumber;
-            imageAccess.imageURL = this.config.pdf_proxy_url_prefix + encodeURIComponent (imageSource.pageURL) + '/'+encodeURIComponent (imageSource.pageNumber)+'/image.png';
-            imageAccess.isInternal = true;
+            if (this.config.pdf_proxy_url_prefix) {
+              imageAccess.imageURL = this.config.pdf_proxy_url_prefix + encodeURIComponent (imageSource.pageURL) + '/'+encodeURIComponent (imageSource.pageNumber)+'/image.png';
+              imageAccess.isInternal = true;
+            }
             imageRegion.regionKey ??= m[3]; // or undefined
             if (!imageSource.imageWidth) {
               imageAccess.needImageDimension = true;
@@ -445,10 +451,12 @@ import { PQ } from './pq.js';
           } else if (res.headers.get ('content-type')?.match (/^application\/pdf\b/) ||
                      (res.headers.get ('content-type')?.match (/^application\/octet-stream\b/) && imageSource.pageURL?.match (/pdf/))) {
             imageSource.pageNumber ??= imageAccess.pageNumber ?? 1;
-            imageAccess.imageURL = this.config.pdf_proxy_url_prefix + encodeURIComponent (imageSource.pageURL) + '/'+encodeURIComponent (imageSource.pageNumber)+'/image.png';
+            if (this.config.pdf_proxy_url_prefix) {
+              imageAccess.imageURL = this.config.pdf_proxy_url_prefix + encodeURIComponent (imageSource.pageURL) + '/'+encodeURIComponent (imageSource.pageNumber)+'/image.png';
+              imageAccess.isInternal = true;
+            }
             imageSource.key = imageSource.key.replace (/^unknown-/, 'pdf-') + '-' + imageSource.pageNumber;
             imageAccess.needImageDimension = true;
-            imageAccess.isInternal = true;
           } else {
             throw new Error ("The specified URL <"+imageSource.pageURL+"> is not an image");
           }
@@ -646,7 +654,10 @@ import { PQ } from './pq.js';
         }
       } // iiifURL
       
-      let fURL = (imageAccess.imageURL || imageSource.imageURL) + '';
+      let fURL = imageAccess.imageURL || imageSource.imageURL;
+      if (!fURL && opts.allowNoImage) return null;
+      fURL += "";
+      
       let getImg;
       if (opts.useCache) {
         this._cache ??= new Map;
@@ -693,6 +704,7 @@ import { PQ } from './pq.js';
 
     async getClippedImageData ({imageSource, imageAccess, imageRegion}, opts = {}) {
       let image = await this.getImageByImageAccess ({imageSource, imageAccess, imageRegion}, opts); // or throw
+      if (opts.allowNoImage && image === null) return null;
       let rb = PQ.RegionBoundary.fromArray (imageRegion.regionBoundary);
 
       let ctx = image.getClippedCanvasByRegionBoundary (rb); 

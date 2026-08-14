@@ -6,17 +6,17 @@ use JSON::PS;
 my $ScriptSet = $ENV{SCRIPT_SET} // '';
 
 my $ScriptTags = {};
-if ($ScriptSet eq 'nanbu') {
+if ($ScriptSet eq 'nanbu' or $ScriptSet eq 'full') {
   $ScriptTags->{田山文字} = 'TAYM';
   $ScriptTags->{盛岡文字} = 'MROK';
-} elsif ($ScriptSet eq 'kanji') {
+}
+if ($ScriptSet eq 'kanji' or $ScriptSet eq 'full') {
   $ScriptTags->{漢字} = 'HANI';
-} elsif ($ScriptSet eq 'kana') {
+}
+if ($ScriptSet eq 'kana' or $ScriptSet eq 'full') {
   $ScriptTags->{平仮名} = 'HIRA';
   $ScriptTags->{片仮名} = 'KATA';
   $ScriptTags->{仮名} = 'HIRA';
-} else {
-  die "Bad SCRIP_SET |$ScriptSet|";
 }
 
 my $FreeLicenseKeys = {
@@ -189,7 +189,9 @@ for (<>) {
         $data->{value},
         $variant,
         $style;
-      
+
+    next if $script eq 0 and not $ScriptSet eq 'full';
+    
     if (defined $data->{image_region}) {
       die "Duplicate |$data->{region_ref}|"
           if defined $Data->{items}->{$data->{region_ref}};
