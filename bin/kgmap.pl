@@ -1377,10 +1377,18 @@ sub set_glyph ($) {
           my $obj2 = [@$obj];
           ($obj2->[-1], $obj2->[-2]) = ($obj2->[-2], $obj2->[-1]);
           my $key2 = join ' ', @$obj2;
-         #XXX $key_alias->{$key2} = join ' ', @$obj;
           $key_to_obj->{$key2} = [@$obj2];
           pop @$obj2;
           push @$required_objs, $obj2;
+        } elsif (@$obj >= 3 and {
+          0x3099 => 1, 0x309A => 1,
+        }->{$obj->[-3]}) {
+          # (base) SMAL (voiced) (script)
+          # (base) (script) SMAL (voiced)
+          my $obj2 = [@$obj];
+          ($obj2->[-3], $obj2->[-2], $obj2->[-1]) = ($obj2->[-2], $obj2->[-1], $obj2->[-3]);
+          pop @$obj2;
+          push @$required_objs, [@$obj2];
         }
       }
       for my $f (qw(LARG SMSM WHIT SANB)) {
@@ -1400,7 +1408,6 @@ sub set_glyph ($) {
           my $obj2 = [@$obj];
           ($obj2->[-1], $obj2->[-2]) = ($obj2->[-2], $obj2->[-1]);
           my $key2 = join ' ', @$obj2;
-         #XXX $key_alias->{$key2} = join ' ', @$obj;
           $key_to_obj->{$key2} = [@$obj2];
           pop @$obj2;
           push @$required_objs, $obj2;
@@ -2025,6 +2032,7 @@ sub set_glyph ($) {
                       $Keys->{is_enclosing}->{$obj->[0]}) and
                  $Keys->{is_combining}->{$obj->[1]} and
                  $obj->[2] eq 'hwid') {
+          # [base] [combining] hwid SMAL
           my $so = [@$obj];
           pop @$so;
           
@@ -2032,12 +2040,28 @@ sub set_glyph ($) {
               // $key_to_gid->{"$obj->[0] $obj->[1] $obj->[3] $obj->[2]"}
               // die "Bad |$key|";
 
-            my @gid1;
-            push @gid1, $key_to_gid->{$so->[0] . ' ' . $obj->[-1] . ' hwid'}
-                // die "Bad |$so->[0] hwid $obj->[-1]| (@$obj)";
-            push @gid1, $key_to_gid->{$so->[1]}
-                // die "Bad |$so->[1]| (@$obj)";
-            push @{$Data->{ccmp}->{main} ||= []}, [\@gid1 => $gid2];
+          my @gid1;
+          push @gid1, $key_to_gid->{$so->[0] . ' ' . $obj->[-1] . ' ' . $obj->[2]}
+              // die "Bad |$so->[0] $obj->[2] $obj->[-1]| (@$obj)";
+          push @gid1, $key_to_gid->{$so->[1]}
+              // die "Bad |$so->[1]| (@$obj)";
+          push @{$Data->{ccmp}->{main} ||= []}, [\@gid1 => $gid2];
+        } elsif (@$obj == 4 and $obj->[0] =~ /^[0-9]+$/ and
+                 not ($Keys->{is_combining}->{$obj->[0]} or
+                      $Keys->{is_enclosing}->{$obj->[0]}) and
+                 $Keys->{is_combining}->{$obj->[1]} and
+                 $obj->[2] =~ /\A($ScriptFeatPattern)([0-9]+)\z/o) {
+          # [base] [combining] [script] SMAL
+          my $gid2 = $key_to_gid->{$key}
+              // $key_to_gid->{"$obj->[0] $obj->[1] $obj->[3] $obj->[2]"}
+              // die "Bad |$key|";
+
+          my @gid1;
+          push @gid1, $key_to_gid->{"$obj->[0] $obj->[2] $obj->[-1]"}
+              // die "Bad |$obj->[0] $obj->[2] $obj->[-1]| (@$obj)";
+          push @gid1, $key_to_gid->{$obj->[1]}
+              // die "Bad |$obj->[1]| (@$obj)";
+          push @{$Data->{ccmp}->{main} ||= []}, [\@gid1 => $gid2];
         } elsif (@$obj == 4 and $obj->[0] =~ /^[0-9]+$/ and
                  not ($Keys->{is_combining}->{$obj->[0]} or
                       $Keys->{is_enclosing}->{$obj->[0]}) and
@@ -2046,12 +2070,7 @@ sub set_glyph ($) {
           my $so = [@$obj];
           pop @$so;
           
-          my $gid2;
-          if (defined $key_alias->{$key}) {
-            $gid2 = $key_to_gid->{$key_alias->{$key}};
-          } else {
-            $gid2 = $key_to_gid->{$key};
-          }
+          my $gid2 = $key_to_gid->{$key};
           die unless defined $gid2;
 
             my @gid1;
