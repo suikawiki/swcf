@@ -213,6 +213,7 @@ local/swcfk/kana4b.ttf: $(NEW_CHECKSUM4_FILE)
 	(cmp -s $(NEW_CHECKSUM4_FILE) $(CHECKSUM4_FILE) && test -f "$@" ) || ( \
 	        set -e; \
 		echo "Inputs for $@ have changed or target is missing. Generating font..."; \
+	        touch $@; \
 		docker run -i \
 			-v `pwd`/js:/app \
 			-v `pwd`/local/swcfk/kana4-kgmap.json:/app/kana4-kgmap.json \
